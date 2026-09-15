@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+
+    </appender>
+
+
+    <appender name="filebeatAppender"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <file>logs/app.log</file>
+
+        <append>true</append>
+
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+
+            <customFields>
+                {"application":"springBootDemo","environment":"local"}
+            </customFields>
+
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <fileNamePattern>
+                logs/app.%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+
+            <maxFileSize>10MB</maxFileSize>
+
+            <maxHistory>7</maxHistory>
+
+            <totalSizeCap>100MB</totalSizeCap>
+
+        </rollingPolicy>
+
+    </appender>
+
+
+    <root level="INFO">
+
+        <appender-ref ref="CONSOLE"/>
+
+        <appender-ref ref="filebeatAppender"/>
+
+    </root>
+
+</configuration>
