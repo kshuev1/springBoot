@@ -1,19 +1,95 @@
 services:
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: springboot-app
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m
+
+    volumes:
+      - ./logs:/var/log/springboot
+
+    networks:
+      - elk
+      - monitoring
+
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+
+    container_name: prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+
+    networks:
+      - monitoring
+
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:latest
+
+    container_name: grafana
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./docker/grafana/provisioning/dashboards/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    networks:
+      - monitoring
+
+    depends_on:
+      - prometheus
+
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.3
+
     container_name: elasticsearch
+
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - xpack.security.enrollment.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
+
     ports:
       - "9200:9200"
+
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
+
     networks:
       - elk
+
     healthcheck:
       test:
         [
@@ -27,48 +103,65 @@ services:
 
   logstash:
     image: docker.elastic.co/logstash/logstash:9.5.3
+
     container_name: logstash
+
     depends_on:
       elasticsearch:
         condition: service_healthy
+
     ports:
       - "5044:5044"
       - "9600:9600"
+
     volumes:
       - ./docker/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+
     networks:
       - elk
 
 
   kibana:
     image: docker.elastic.co/kibana/kibana:9.5.3
+
     container_name: kibana
+
     depends_on:
       elasticsearch:
         condition: service_healthy
+
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+
     ports:
       - "5601:5601"
+
     volumes:
       - kibana-data:/usr/share/kibana/data
+
     networks:
       - elk
 
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:9.5.3
+
     container_name: filebeat
+
     user: root
+
     depends_on:
       logstash:
         condition: service_started
+
     volumes:
       - ./docker/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - ./logs:/var/log/springboot:ro
       - filebeat-data:/usr/share/filebeat/data
+
     networks:
       - elk
+
     command:
       - filebeat
       - -e
@@ -86,8 +179,14 @@ volumes:
   filebeat-data:
     name: springboot-filebeat-data
 
+  grafana-data:
+    name: springboot-grafana-data
+
 
 networks:
 
   elk:
     name: springboot-elk
+
+  monitoring:
+    name: springboot-monitoring

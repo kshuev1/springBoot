@@ -21,7 +21,13 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+
+
+	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+
+
 	implementation("net.logstash.logback:logstash-logback-encoder:9.0")
+
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
@@ -32,6 +38,7 @@ dependencies {
 	testCompileOnly("org.projectlombok:lombok")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testAnnotationProcessor("org.projectlombok:lombok")
+
 	testImplementation("org.testcontainers:junit-jupiter:1.15.1")
 	testImplementation("org.springframework.boot:spring-boot-resttestclient")
 	testImplementation("org.springframework.boot:spring-boot-restclient")
